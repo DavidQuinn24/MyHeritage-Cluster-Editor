@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>AutoClusters Editor</title>
+    <link href="https://d.mhcache.com/FP/Assets/Cache/Vendors/AutoClusters/tabulator_semantic-ui.min.css" rel="stylesheet">
+    <style>
+
+    body {
+        width: auto;
+        margin: 0 50px 60px;
+        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-style: normal;
+        font-stretch: normal;
+        font-weight: normal;
+        color: rgba(0,0,0,0.85);
+    }
+    .background { fill: #f1f1f1; }
+    .page-header {
+        margin-top: 35px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+        padding-bottom: 15px;
+    }
+    .title { font-size: 40px; font-weight: bold; margin: 0; }
+    .subtitle { font-size: 16px; color: rgba(0,0,0,0.6); margin: 6px 0 0 0; }
+    .global-clusters_wrapper{ font-size: 15px; padding-top: 20px; color: rgba(0,0,0,0.6); text-align: center; }
+    .info{ padding-right: 50px; }
+    .number { color: black; font-weight: 600;}
+    line { stroke: #fff; }
+    text.active { fill: black; font-weight: bold; }
+    .order-by-selector-options{ font-size: 15px; }
+    div.tooltip {
+        display: inline-block;
+        position: absolute;
+        text-align: center;
+        padding: 15px;
+        border-radius: 6px;
+        pointer-events: none;
+        fill-opacity: 1;
+        opacity: 0.95;
+        box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.3);
+        background-color: #ffffff;
+        font-size: 15px;
+        line-height: 1.3;
+        letter-spacing: 0.3px;
+        color: rgba(0, 0, 0, 0.8);
+        z-index: 50;
+    }
+    .users-table { position: relative; margin: 30px auto 0; }
+    .column-text {
+        width: 28px; overflow: hidden; text-overflow: ellipsis;
+        fill: rgba(0, 0, 0, 0.6); transform: translate(15px,-3px)rotate(25deg); cursor: default;
+    }
+    .row-text {
+        width: 28px; overflow: hidden; text-overflow: ellipsis;
+        fill: rgba(0, 0, 0, 0.6); transform: translate(-10px, 0); cursor: default;
+    }
+    .order-by-selector { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 27px 0 0; }
+    .order-by-selector-lable {
+        margin: 0; font-size: 16px; line-height: 1.56; letter-spacing: 0.2px; color: rgba(0, 0, 0, 0.6);
+    }
+    .order-by-selector-options { padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.25); }
+    /* Extra top clearance here isn't decorative — the matrix's column-name labels are drawn at a
+       steep diagonal angle above the grid itself (see the .column-text rendering in the chart code)
+       and need real room or they visually run up into whatever sits above this section. */
+    .chart-section { display: flex; flex-direction: row; margin: 210px 0 0 160px; justify-content: flex-start; }
+    #chart-container { flex: 0 1 100%; }
+    #chart { overflow: unset; }
+    #chart-legend-container { padding-left: 20px; }
+    #chart-legend { overflow: unset; width: 260px; }
+    .legend-rect { fill-opacity: 0.75; width: 14px; height: 14px; }
+    .legend-text {
+        transform: translate(-21px, -2px); font-size: 12px; font-weight: 400;
+        line-height: 1.58; letter-spacing: 0.5px; color: rgba(0, 0, 0, 0.8); cursor: default;
+    }
+    .legend-text:hover { font-weight: 700; }
+
+    /* --- new UI --- */
+    #setup-screen {
+        min-height: 80vh; display: flex; align-items: center; justify-content: center;
+    }
+    .setup-card {
+        max-width: 620px; text-align: center; padding: 40px; border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    }
+    .setup-card h1 { margin-top: 0; font-size: 30px; }
+    .setup-card p { font-size: 15px; line-height: 1.5; color: rgba(0,0,0,0.65); }
+    .primary-btn {
+        background: #6F8EE0; color: white; border: none; border-radius: 6px;
+        padding: 14px 26px; font-size: 16px; cursor: pointer; font-weight: 600;
+    }
+    .primary-btn:hover { background: #5c7dd6; }
+    .secondary-btn {
+        background: white; color: #333; border: 1px solid rgba(0,0,0,0.2); border-radius: 6px;
+        padding: 9px 16px; font-size: 14px; cursor: pointer; margin: 0 6px;
+    }
+    .secondary-btn:hover { background: #f5f5f5; }
+    .setup-hint { font-size: 14px; color: rgba(0,0,0,0.65); margin-bottom: 18px; }
+    .setup-error { color: #c0392b; font-weight: 600; min-height: 20px; }
+
+    .fallback-disclosure { text-align: left; margin-top: 26px; font-size: 13.5px; }
+    .fallback-disclosure summary {
+        cursor: pointer; color: rgba(0,0,0,0.55); font-size: 13px; padding: 6px 0;
+    }
+    .fallback-disclosure summary:hover { color: rgba(0,0,0,0.8); }
+    #fallback-pickers { margin-top: 12px; padding: 14px 16px; background: #f7f7f7; border-radius: 8px; }
+    #fallback-pickers > p:first-child { margin-top: 0; color: rgba(0,0,0,0.6); font-size: 13px; }
+    #fallback-pickers label { display: block; margin: 10px 0; }
+
+    .save-pill {
+        display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+        padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+        background: #eee; color: rgba(0,0,0,0.6);
+    }
+    .save-pill.state-saved { background: #E4F3E6; color: #1e6b28; }
+    .save-pill.state-saving { background: #FFF6E0; color: #8a6d00; }
+    .save-pill.state-error, .save-pill.state-off { background: #FBE7E4; color: #a3341e; }
+
+    .banner {
+        margin-top: 18px; padding: 12px 16px; border-radius: 6px; background: #FFF6E0;
+        border: 1px solid #F2BE5E; font-size: 14px; color: #6b5300;
+    }
+    .banner button { margin-left: 12px; }
+
+    .top-toolbar {
+        margin-top: 18px; padding: 12px 16px; border-radius: 6px; background: #f4f6fb;
+        border: 1px solid #dfe6f5; display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; flex-wrap: wrap;
+    }
+    .top-toolbar-hint { font-size: 13.5px; color: rgba(0,0,0,0.65); line-height: 1.5; margin: 0; flex: 1 1 320px; }
+    .top-toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .clusters-panel { margin-top: 24px; }
+    .clusters-panel h2 { font-size: 20px; margin-bottom: 4px; }
+    .clusters-panel-hint { font-size: 13px; color: rgba(0,0,0,0.55); margin-top: 0; }
+    #clusters-panel-body {
+        max-height: 300px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 8px; padding: 2px 10px;
+    }
+    .cluster-row {
+        display: grid;
+        grid-template-columns: 18px 90px 1fr 1fr 2fr 90px;
+        gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .cluster-row:last-child { border-bottom: none; }
+    .cluster-row input {
+        font-size: 13px; padding: 6px 8px; border: 1px solid rgba(0,0,0,0.18); border-radius: 4px; width: 100%; box-sizing: border-box;
+    }
+    .cluster-swatch { width: 16px; height: 16px; border-radius: 3px; display: inline-block; }
+    .cluster-label { font-size: 13px; font-weight: 600; color: rgba(0,0,0,0.7); }
+    .cluster-count { font-size: 12px; color: rgba(0,0,0,0.5); text-align: right; }
+
+    .title-row { display:flex; align-items:baseline; gap:14px; flex-wrap: wrap; }
+
+    /* --- make the editable table columns unmistakable --- */
+    .tabulator .tabulator-cell.editable-col {
+        background-color: #FFFBE6 !important;
+        box-shadow: inset 0 0 0 1px #E9DFA0;
+        cursor: text;
+    }
+    .tabulator .tabulator-cell.editable-col:hover {
+        background-color: #FFF3BF !important;
+        box-shadow: inset 0 0 0 1px #D8C763;
+    }
+    .tabulator .tabulator-cell.editable-col.tabulator-editing {
+        background-color: #ffffff !important;
+        box-shadow: inset 0 0 0 2px #6F8EE0;
+    }
+    .editable-placeholder { color: rgba(0, 0, 0, 0.4); font-style: italic; }
+    /* flag the column headers too, so it's clear before you even hover a cell */
+    .tabulator .tabulator-col.editable-col .tabulator-col-title {
+        color: #7a6300;
+    }
+    .tabulator .tabulator-col.editable-col {
+        background-color: #FFFBE6;
+    }
+    .editable-legend {
+        display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+        color: #7a6300; background: #FFFBE6; border: 1px solid #E9DFA0; border-radius: 4px;
+        padding: 4px 10px; margin: 10px 0 0;
+    }
+    .editable-legend .swatch {
+        width: 12px; height: 12px; border-radius: 2px; background: #FFFBE6; box-shadow: inset 0 0 0 1px #D8C763; display: inline-block;
+    }
+    </style>
+</head>
+<body>
+
+<div id="setup-screen">
+    <div class="setup-card">
+        <h1>AutoClusters Editor</h1>
+        <p>Add your own cluster names, research notes, status tags and surname/line labels on top of a MyHeritage
+            AutoClusters export &mdash; without ever changing MyHeritage's own CSV or HTML files.</p>
+        <p class="setup-hint" id="capability-hint"></p>
+        <button id="open-folder-btn" class="primary-btn">Open export folder&hellip;</button>
+        <p id="setup-error" class="setup-error"></p>
+
+        <details class="fallback-disclosure">
+            <summary>Trouble with the button above? Or does your folder have more than one export? Use manual file pickers instead</summary>
+            <div id="fallback-pickers">
+                <p>Only use these if "Open export folder…" doesn't work in your browser, or if this folder contains
+                    more than one AutoClusters HTML or metadata file (the automatic picker only works with exactly one of each):</p>
+                <label>AutoClusters HTML file (the interactive chart MyHeritage sent you):
+                    <input type="file" id="html-file-input" accept=".html,.htm"></label>
+                <label>Existing <code>clusters-metadata.json</code> from this tool, if you already have one (optional):
+                    <input type="file" id="meta-file-input" accept=".json"></label>
+                <button id="load-files-btn" class="secondary-btn">Load selected files</button>
+                <p style="color: rgba(0,0,0,0.5); margin-bottom: 0;">Note: files picked this way won't autosave &mdash;
+                    you'll need to click <b>Export metadata</b> yourself to keep your edits.</p>
+            </div>
+        </details>
+    </div>
+</div>
+
+<div id="app" style="display:none">
+
+    <div class="page-header">
+        <div>
+            <div class="title-row">
+                <h1 class="title">AutoClusters Editor</h1>
+            </div>
+            <h2 class="subtitle" id="subtitle-line"></h2>
+        </div>
+    </div>
+
+    <div id="refresh-banner" class="banner" style="display:none"></div>
+
+    <div class="top-toolbar">
+        <p class="top-toolbar-hint">
+            Click a cluster's <b>swatch color</b> in the matrix legend, or use the panel below, to rename it and leave
+            research notes. MyHeritage's own data always stays read-only here.
+        </p>
+        <div class="top-toolbar-actions">
+            <span id="save-status" class="save-pill">Checking autosave&hellip;</span>
+            <button id="export-btn" class="secondary-btn">Export metadata (.json)</button>
+            <button id="import-btn" class="secondary-btn">Import metadata&hellip;</button>
+            <button id="open-original-btn" class="secondary-btn">Open original MyHeritage chart</button>
+            <input type="file" id="import-input" accept=".json" style="display:none">
+        </div>
+    </div>
+
+    <div class="clusters-panel">
+        <h2>Your clusters</h2>
+        <p class="clusters-panel-hint">Name each cluster and jot down what you think it represents. Scroll for more &mdash; the matrix below stays put.</p>
+        <div id="clusters-panel-body"></div>
+    </div>
+
+    <div class="order-by-selector">
+        <label class="order-by-selector-lable" for="order">Order DNA Matches by:</label>
+        <select id="order" class="order-by-selector-options">
+            <option selected value="name">Name</option>
+            <option value="count"># of shared matches</option>
+            <option value="group">Cluster</option>
+            <option value="cM">Shared cMs with the tester</option>
+        </select>
+    </div>
+
+    <div class="chart-section">
+        <div id="chart-container"></div>
+        <div id="chart-legend-container"></div>
+    </div>
+
+    <div align="center">
+        <h2 style="padding-top: 30px">All matches</h2>
+        <span class="editable-legend"><span class="swatch"></span> Yellow columns (marked ✎) are yours to edit — click any cell</span>
+    </div>
+    <div style="position: relative; margin:auto; margin-bottom: 40px" align="center">
+        <div id="users-table" class="users-table" align="center"></div>
+    </div>
+
+</div>
+
+<datalist id="status-options">
+    <option value="To Research">
+    <option value="In Progress">
+    <option value="Identified">
+    <option value="Dead End">
+</datalist>
+
+<script type="text/javascript" src="https://d.mhcache.com/FP/Assets/Cache/Vendors/AutoClusters/d3.v2.min.js"></script>
+<script type="text/javascript" src="https://d.mhcache.com/FP/Assets/Cache/Vendors/AutoClusters/tabulator.min.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ---------- color palette (same as MyHeritage's own AutoClusters output) ----------
+    var DNA_MATCH_COLORS_POOL = [
+        '#E47586', '#F2BE5E', '#ECE731', '#ADE277', '#95DAEB', '#6F8EE0',
+        '#D290F9', '#917979', '#FAD6B1', '#BDBD41', '#5FBEB3', '#816DD4'
+    ];
+    function getKeyColor(key) {
+        return DNA_MATCH_COLORS_POOL[(key - 1) % DNA_MATCH_COLORS_POOL.length];
+    }
+    function createElipsisText(text) {
+        var maxStringlength = 20;
+        if (!text) return '';
+        if (text.length < maxStringlength) { return text; }
+        return text.slice(0, maxStringlength) + '...';
+    }
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+        });
+    }
+    (function () {
+        if (typeof NodeList.prototype.forEach === 'function') return false;
+        NodeList.prototype.forEach = Array.prototype.forEach;
+    })();
+
+    // ---------- parsing the source MyHeritage AutoClusters HTML ----------
+    function extractBalancedJSON(text, startIndex) {
+        var depth = 0, inStr = false, strCh = null, esc = false;
+        for (var i = startIndex; i < text.length; i++) {
+            var c = text[i];
+            if (inStr) {
+                if (esc) { esc = false; }
+                else if (c === '\\') { esc = true; }
+                else if (c === strCh) { inStr = false; }
+                continue;
+            }
+            if (c === '"' || c === "'") { inStr = true; strCh = c; continue; }
+            if (c === '{') { depth++; }
+            else if (c === '}') {
+                depth--;
+                if (depth === 0) { return text.slice(startIndex, i + 1); }
+            }
+        }
+        return null;
+    }
+
+    function parseSourceHtml(htmlText) {
+        var marker = 'var json';
+        var markerIdx = htmlText.indexOf(marker);
+        if (markerIdx === -1) { throw new Error("Could not find AutoClusters chart data (a 'var json = {...}' block) in this HTML file."); }
+        var eq = htmlText.indexOf('=', markerIdx);
+        var braceStart = htmlText.indexOf('{', eq);
+        var jsonStr = extractBalancedJSON(htmlText, braceStart);
+        if (!jsonStr) { throw new Error('Found the AutoClusters data but could not parse it.'); }
+        var data = JSON.parse(jsonStr);
+        if (!data.nodes || !data.links) { throw new Error("The AutoClusters data in this file is missing 'nodes' or 'links'."); }
+        var subtitle = '';
+        var m = htmlText.match(/<h2 class="subtitle">([^<]*)<\/h2>/);
+        if (m) { subtitle = m[1]; }
+        return { data: data, subtitle: subtitle };
+    }
+
+    // The match URL looks like ".../dna/match/D-<kit id>-D-<match id>?forcelogin=...".
+    // The match id is usually a GUID but isn't always (MyHeritage uses other token shapes
+    // for some imported/third-party matches), so split on the "-D-" separator rather than
+    // pattern-matching a strict GUID shape — that also avoids colliding on the kit's own id.
+    function extractGuid(url) {
+        if (!url) return null;
+        var withoutQuery = url.split('?')[0];
+        var parts = withoutQuery.split('-D-');
+        if (parts.length < 2) return null;
+        return parts[parts.length - 1].toUpperCase();
+    }
+
+    // ---------- metadata model ----------
+    function defaultMetadata(sourceInfo) {
+        return {
+            schemaVersion: 1,
+            sourceExport: {
+                htmlFile: sourceInfo.htmlName || null,
+                subtitle: sourceInfo.subtitle || '',
+                matchCount: sourceInfo.matchCount,
+                clusterCount: sourceInfo.clusterCount,
+                savedAt: null
+            },
+            clusters: {},
+            matches: {}
+        };
+    }
+
+    // merges an existing metadata file (if any) against a freshly parsed export.
+    // returns { meta, refreshed } — refreshed = true if this looks like a re-generated export
+    // (different match/cluster counts than what the metadata file last recorded).
+    function mergeMetadata(existing, sourceInfo, nodes, groupKeys) {
+        var meta = existing ? JSON.parse(JSON.stringify(existing)) : defaultMetadata(sourceInfo);
+        if (!meta.clusters) meta.clusters = {};
+        if (!meta.matches) meta.matches = {};
+        if (!meta.sourceExport) meta.sourceExport = {};
+
+        var refreshed = false;
+        if (existing && existing.sourceExport) {
+            var prevMatches = existing.sourceExport.matchCount;
+            var prevClusters = existing.sourceExport.clusterCount;
+            if ((prevMatches != null && prevMatches !== sourceInfo.matchCount) ||
+                (prevClusters != null && prevClusters !== sourceInfo.clusterCount)) {
+                refreshed = true;
+            }
+        }
+
+        groupKeys.forEach(function (g) {
+            if (!meta.clusters[g]) { meta.clusters[g] = { customName: '', notes: '', surname: '', memberGuidsSnapshot: [] }; }
+            meta.clusters[g].memberGuidsSnapshot = nodes.filter(function (n) { return String(n.group) === String(g); })
+                .map(function (n) { return n.guid; }).filter(Boolean);
+        });
+        nodes.forEach(function (n) {
+            if (n.guid && !meta.matches[n.guid]) {
+                meta.matches[n.guid] = { myNotes: '', researchStatus: '', surname: '', lastEdited: null };
+            }
+        });
+
+        meta.sourceExport.htmlFile = sourceInfo.htmlName || meta.sourceExport.htmlFile;
+        meta.sourceExport.subtitle = sourceInfo.subtitle || meta.sourceExport.subtitle;
+        meta.sourceExport.matchCount = sourceInfo.matchCount;
+        meta.sourceExport.clusterCount = sourceInfo.clusterCount;
+
+        return { meta: meta, refreshed: refreshed };
+    }
+
+    // ---------- app state ----------
+    var dirHandle = null;
+    var nodes = [], links = [], groupKeys = [], meta = null, table = null;
+    var legendTextByGroup = {}, legendRectByGroup = {};
+    var saveTimer = null;
+    var originalHtmlText = null, originalHtmlName = null;
+
+    var setupScreen = document.getElementById('setup-screen');
+    var appEl = document.getElementById('app');
+    var setupError = document.getElementById('setup-error');
+    var capabilityHint = document.getElementById('capability-hint');
+    var saveStatusEl = document.getElementById('save-status');
+    var exportBtn = document.getElementById('export-btn');
+    var autosaveConfirmed = false; // becomes true only once a real write to disk has succeeded
+
+    var supportsFS = !!window.showDirectoryPicker;
+    capabilityHint.textContent = supportsFS
+        ? 'Please open the folder your MyHeritage export is in below — your edits will save straight back into it.'
+        : "Your browser doesn't support saving directly to a folder (that needs Chrome or Edge). Use the manual file pickers below instead, and click Export metadata regularly to save your work.";
+    if (!supportsFS) {
+        document.getElementById('open-folder-btn').style.display = 'none';
+        document.querySelector('.fallback-disclosure').open = true;
+    }
+
+    function setError(msg) { setupError.textContent = msg || ''; }
+
+    document.getElementById('open-folder-btn').addEventListener('click', async function () {
+        setError('');
+        try {
+            var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            dirHandle = handle;
+            await loadFromDirectory(handle);
+        } catch (e) {
+            if (e && e.name !== 'AbortError') { setError(e.message); }
+        }
+    });
+
+    document.getElementById('load-files-btn').addEventListener('click', handleFallbackFiles);
+
+    async function handleFallbackFiles() {
+        setError('');
+        var htmlInput = document.getElementById('html-file-input');
+        var metaInput = document.getElementById('meta-file-input');
+        if (!htmlInput.files.length) { setError('Please choose the AutoClusters HTML file first.'); return; }
+        try {
+            var htmlText = await htmlInput.files[0].text();
+            var existingMeta = null;
+            if (metaInput.files.length) {
+                existingMeta = JSON.parse(await metaInput.files[0].text());
+            }
+            boot({ htmlText: htmlText, htmlName: htmlInput.files[0].name, existingMeta: existingMeta, dirHandle: null });
+        } catch (e) {
+            setError(e.message);
+        }
+    }
+
+    async function loadFromDirectory(handle) {
+        setError('');
+        var htmlCandidates = [];
+        var metadataRawText = null, metadataParseError = null, existingMeta = null;
+        try {
+            for await (var entry of handle.entries()) {
+                var name = entry[0], entryHandle = entry[1];
+                if (entryHandle.kind !== 'file') { continue; }
+                if (/\.html?$/i.test(name)) {
+                    var file = await entryHandle.getFile();
+                    var text = await file.text();
+                    // Actually try to parse it as a MyHeritage AutoClusters export rather than just
+                    // pattern-matching text — this editor's own HTML file can otherwise look like a
+                    // match too (its source contains the same marker text describing what it looks for),
+                    // and a loose text match previously picked up this tool's own file by mistake.
+                    try {
+                        var candidateParsed = parseSourceHtml(text);
+                        if (candidateParsed.data.nodes && candidateParsed.data.nodes.length > 0) {
+                            htmlCandidates.push({ name: name, text: text });
+                        }
+                    } catch (e) { /* not a valid AutoClusters export — skip it */ }
+                } else if (name.toLowerCase() === 'clusters-metadata.json') {
+                    metadataRawText = await (await entryHandle.getFile()).text();
+                    // Save a safety copy of whatever's on disk BEFORE this session touches anything,
+                    // so a bug here (or a corrupt file) can never silently destroy existing notes —
+                    // there's always a copy of "what was here when I opened it" to fall back to.
+                    try {
+                        var backupHandle = await handle.getFileHandle('clusters-metadata.backup.json', { create: true });
+                        var backupWritable = await backupHandle.createWritable();
+                        await backupWritable.write(metadataRawText);
+                        await backupWritable.close();
+                    } catch (e) { /* best-effort backup; don't block loading on it */ }
+                    try { existingMeta = JSON.parse(metadataRawText); }
+                    catch (e) { metadataParseError = e; }
+                }
+            }
+        } catch (e) {
+            setError('Could not read that folder: ' + e.message);
+            return;
+        }
+        if (!htmlCandidates.length) {
+            setError('No AutoClusters HTML file was found in that folder — make sure you selected the folder containing your MyHeritage export.');
+            return;
+        }
+        if (htmlCandidates.length > 1) {
+            setError('Found more than one AutoClusters export HTML file in that folder (' +
+                htmlCandidates.map(function (c) { return c.name; }).join(', ') +
+                ') — please keep only one MyHeritage export per folder and try again.');
+            return;
+        }
+        if (metadataRawText !== null && metadataParseError) {
+            setError("Found clusters-metadata.json in that folder but couldn't read it (" + metadataParseError.message +
+                "). To protect your existing notes, nothing will be overwritten — a safety copy was saved as " +
+                'clusters-metadata.backup.json. Please check that file, fix or replace clusters-metadata.json, then try again.');
+            return;
+        }
+        boot({ htmlText: htmlCandidates[0].text, htmlName: htmlCandidates[0].name, existingMeta: existingMeta, dirHandle: handle });
+    }
+
+    function boot(opts) {
+        var parsed;
+        try {
+            parsed = parseSourceHtml(opts.htmlText);
+        } catch (e) {
+            setError(e.message);
+            return;
+        }
+        originalHtmlText = opts.htmlText;
+        originalHtmlName = opts.htmlName;
+        dirHandle = opts.dirHandle;
+
+        nodes = parsed.data.nodes.map(function (n, i) {
+            var copy = Object.assign({}, n);
+            copy.index = i;
+            copy.guid = extractGuid(n.url);
+            return copy;
+        });
+        links = parsed.data.links;
+        groupKeys = Array.from(new Set(nodes.map(function (n) { return n.group; })))
+            .sort(function (a, b) { return a - b; });
+
+        var sourceInfo = {
+            htmlName: opts.htmlName,
+            subtitle: parsed.subtitle,
+            matchCount: nodes.length,
+            clusterCount: groupKeys.length
+        };
+        var merged = mergeMetadata(opts.existingMeta, sourceInfo, nodes, groupKeys);
+        meta = merged.meta;
+
+        setupScreen.style.display = 'none';
+        appEl.style.display = '';
+        document.getElementById('subtitle-line').textContent = parsed.subtitle || '';
+
+        if (merged.refreshed) {
+            var banner = document.getElementById('refresh-banner');
+            banner.style.display = '';
+            banner.innerHTML = 'This looks like a refreshed MyHeritage export (the match or cluster count changed). ' +
+                'Notes and tags for matches already in your metadata file carried over automatically by match ID. ' +
+                'Cluster names/notes are still attached to the old cluster numbers, so double-check clusters ' +
+                'still line up with what you expect and re-apply any that shifted.';
+        }
+
+        renderClustersPanel();
+        renderChart();
+        renderTable();
+
+        if (dirHandle) {
+            // Do an immediate trial save (harmless — it just writes back what we just merged)
+            // so we can confirm autosave actually works before promising the user it's on.
+            setSaveStatus('saving', 'Checking autosave…');
+            doSave();
+        } else {
+            autosaveConfirmed = false;
+            setSaveStatus('off', supportsFS
+                ? 'Autosave off (no folder connected) — use Export metadata'
+                : 'Autosave unavailable in this browser — use Export metadata');
+            updateExportVisibility();
+        }
+    }
+
+    // ---------- saving ----------
+    function setSaveStatus(state, message) {
+        saveStatusEl.className = 'save-pill' + (state ? ' state-' + state : '');
+        saveStatusEl.textContent = message;
+    }
+
+    // The Export button is only for when autosave isn't confirmed working — once we know
+    // writes are actually landing on disk there's nothing for it to do that autosave doesn't
+    // already cover, so keep it out of the way rather than inviting a manual step people forget.
+    function updateExportVisibility() {
+        exportBtn.style.display = autosaveConfirmed ? 'none' : '';
+    }
+
+    function scheduleSave() {
+        setSaveStatus('saving', 'Editing…');
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(doSave, 900);
+    }
+
+    async function doSave() {
+        if (!dirHandle) {
+            autosaveConfirmed = false;
+            setSaveStatus('off', supportsFS
+                ? 'Not connected to a folder — use Export metadata to save a backup.'
+                : 'Autosave unavailable in this browser — use Export metadata to save your work.');
+            updateExportVisibility();
+            return;
+        }
+        try {
+            setSaveStatus('saving', 'Saving…');
+            var fh = await dirHandle.getFileHandle('clusters-metadata.json', { create: true });
+            var writable = await fh.createWritable();
+            meta.sourceExport.savedAt = new Date().toISOString();
+            await writable.write(JSON.stringify(meta, null, 2));
+            await writable.close();
+            autosaveConfirmed = true;
+            setSaveStatus('saved', 'Autosaving to clusters-metadata.json ✓ (' + new Date().toLocaleTimeString() + ')');
+            updateExportVisibility();
+        } catch (e) {
+            autosaveConfirmed = false;
+            setSaveStatus('error', 'Autosave failed (' + e.message + ') — use Export metadata to save a backup.');
+            updateExportVisibility();
+        }
+    }
+
+    // ---------- clusters panel ----------
+    function clusterAnnotation(g) {
+        var info = meta.clusters[g] || {};
+        var count = nodes.filter(function (n) { return String(n.group) === String(g); }).length;
+        var label = 'Cluster ' + g + (info.customName ? ': ' + info.customName : '');
+        return { label: label, count: count };
+    }
+
+    function renderClustersPanel() {
+        var container = document.getElementById('clusters-panel-body');
+        container.innerHTML = '';
+        groupKeys.forEach(function (g) {
+            var info = meta.clusters[g];
+            var count = nodes.filter(function (n) { return String(n.group) === String(g); }).length;
+
+            var row = document.createElement('div');
+            row.className = 'cluster-row';
+
+            var swatch = document.createElement('span');
+            swatch.className = 'cluster-swatch';
+            swatch.style.background = getKeyColor(g);
+
+            var label = document.createElement('span');
+            label.className = 'cluster-label';
+            label.textContent = 'Cluster ' + g;
+
+            var nameInput = document.createElement('input');
+            nameInput.placeholder = 'Name this cluster…';
+            nameInput.value = info.customName || '';
+            nameInput.addEventListener('input', function () {
+                info.customName = nameInput.value;
+                scheduleSave();
+                updateLegendText(g);
+                if (table) table.redraw(true);
+            });
+
+            var surnameInput = document.createElement('input');
+            surnameInput.placeholder = 'Surname / line';
+            surnameInput.value = info.surname || '';
+            surnameInput.addEventListener('input', function () {
+                info.surname = surnameInput.value;
+                scheduleSave();
+            });
+
+            var notesInput = document.createElement('input');
+            notesInput.placeholder = 'Research notes / hypothesis…';
+            notesInput.value = info.notes || '';
+            notesInput.addEventListener('input', function () {
+                info.notes = notesInput.value;
+                scheduleSave();
+            });
+
+            var countSpan = document.createElement('span');
+            countSpan.className = 'cluster-count';
+            countSpan.textContent = count + ' member' + (count === 1 ? '' : 's');
+
+            row.appendChild(swatch);
+            row.appendChild(label);
+            row.appendChild(nameInput);
+            row.appendChild(surnameInput);
+            row.appendChild(notesInput);
+            row.appendChild(countSpan);
+            container.appendChild(row);
+        });
+    }
+
+    function updateLegendText(g) {
+        var sel = legendTextByGroup[g];
+        if (sel) { sel.text(clusterAnnotation(g).label); }
+    }
+
+    // ---------- matrix chart (adapted from MyHeritage's own AutoClusters rendering) ----------
+    function renderChart() {
+        var margin = { top: 0, right: 0, bottom: 0, left: 0 };
+        var width = document.getElementById('chart-container').offsetWidth - 200;
+        var height = width;
+        var legend_start_x = width;
+
+        var div = d3.select('body').append('div').attr('class', 'tooltip').style('opacity', 0);
+
+        var x = d3.scale.ordinal().rangeBands([0, legend_start_x]),
+            z = d3.scale.linear().domain([0, 1000]).clamp(true);
+
+        var svg = d3.select('#chart-container').append('svg')
+            .attr('id', 'chart').attr('width', width).attr('height', height).append('g');
+
+        var legendElement = d3.select('#chart-legend-container').append('svg').attr('id', 'chart-legend');
+
+        var matrix = [];
+        var n = nodes.length;
+
+        nodes.forEach(function (node, i) {
+            node.count = 0;
+            matrix[i] = d3.range(n).map(function (j) { return { x: j, y: i, z: 0 }; });
+        });
+
+        links.forEach(function (link) {
+            matrix[link.source][link.target].z += link.value;
+            matrix[link.target][link.source].z += link.value;
+            matrix[link.source][link.source].z += link.value;
+            matrix[link.target][link.target].z += link.value;
+            nodes[link.source].count += link.value;
+            nodes[link.target].count += link.value;
+        });
+
+        var groups = d3.nest().key(function (d) { return d.group; }).entries(nodes);
+
+        groups.forEach(function (d, i) {
+            var g = d.key;
+            var ann = clusterAnnotation(g);
+
+            var rect = legendElement.append('rect')
+                .attr('x', 0).attr('y', (i * 22)).attr('class', 'legend-rect')
+                .attr('width', 18).attr('height', 18)
+                .style('fill', getKeyColor(g))
+                .style('cursor', 'pointer')
+                .on('click', function () { focusClusterRow(g); })
+                .on('mouseover', function () {
+                    d3.selectAll('.cluster_' + g).style('fill-opacity', 1);
+                    div.transition().duration(300).style('opacity', 1);
+                    var tiptext = '<b>' + escapeHtml(clusterAnnotation(g).label) + '</b><br/>';
+                    nodes.forEach(function (tn) { if (tn.group == g) { tiptext += escapeHtml(tn.name) + '<br/>'; } });
+                    div.html('<p align="left">' + tiptext + '</p>')
+                        .style('left', (d3.event.pageX) + 'px').style('top', (d3.event.pageY) + 'px');
+                })
+                .on('mouseout', function () {
+                    d3.selectAll('.cluster_' + g).style('fill-opacity', function (d) { return z(d.z) + 0.5; });
+                    div.transition().duration(500).style('opacity', 0);
+                });
+            legendRectByGroup[g] = rect;
+
+            var text = legendElement.append('text')
+                .attr('x', 50).attr('y', (i * 22) + 15).attr('class', 'legend-text')
+                .style('cursor', 'pointer')
+                .on('click', function () { focusClusterRow(g); })
+                .on('mouseover', function () {
+                    d3.selectAll('.cluster_' + g).style('fill-opacity', 1);
+                    div.transition().duration(300).style('opacity', 1);
+                    var tiptext = '';
+                    nodes.forEach(function (tn) { if (tn.group == g) { tiptext += escapeHtml(tn.name) + '<br/>'; } });
+                    div.html('<p align="left"><b>' + escapeHtml(clusterAnnotation(g).label) + '</b><br/>' + tiptext + '</p>')
+                        .style('left', (d3.event.pageX) + 'px').style('top', (d3.event.pageY + 15) + 'px');
+                })
+                .on('mouseout', function () {
+                    div.transition().duration(500).style('opacity', 0);
+                    d3.selectAll('.cluster_' + g).style('fill-opacity', function (d) { return z(d.z) + 0.5; });
+                })
+                .text(ann.label + ' (' + ann.count + ')');
+            legendTextByGroup[g] = text;
+        });
+
+        function focusClusterRow(g) {
+            var rows = document.querySelectorAll('.cluster-row');
+            var idx = groupKeys.indexOf(g);
+            if (rows[idx]) {
+                rows[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                var input = rows[idx].querySelector('input');
+                if (input) { input.focus(); }
+            }
+        }
+
+        var cellwidth, maxcellwidth = 15;
+
+        var orders = {
+            name: d3.range(n).sort(function (a, b) { return d3.ascending(nodes[a].name, nodes[b].name); }),
+            count: d3.range(n).sort(function (a, b) { return nodes[b].count - nodes[a].count; }),
+            group: d3.range(n).sort(function (a, b) { return d3.ascending(nodes[a].group, nodes[b].group); }),
+            cM: d3.range(n).sort(function (a, b) { return nodes[b].cM - nodes[a].cM; }),
+            index: d3.range(n).sort(function (a, b) { return nodes[b].index + nodes[a].index; })
+        };
+
+        x.domain(orders.name);
+
+        svg.append('rect').attr('class', 'background').attr('width', width).attr('height', width);
+
+        var row = svg.selectAll('.row').data(matrix).enter().append('g').attr('class', 'row')
+            .attr('transform', function (d, i) { return 'translate(0,' + x(i) + ')'; }).each(rowFn);
+
+        row.append('line').attr('x2', width);
+        row.append('text').attr('x', -6).attr('y', x.rangeBand() / 2).attr('dy', '.32em')
+            .attr('font-size', Math.round(cellwidth - 1) + 'px').attr('text-anchor', 'end').attr('class', 'row-text')
+            .text(function (d, i) { return createElipsisText(nodes[i].name); });
+
+        var column = svg.selectAll('.column').data(matrix).enter().append('g').attr('class', 'column')
+            .attr('transform', function (d, i) { return 'translate(' + x(i) + ')rotate(-90)'; });
+
+        column.append('line').attr('x1', -width);
+        column.append('text').attr('x', 6).attr('y', x.rangeBand() / 2).attr('dy', '.32em')
+            .attr('font-size', Math.round(cellwidth - 1) + 'px').attr('text-anchor', 'start').attr('class', 'column-text')
+            .text(function (d, i) { return createElipsisText(nodes[i].name); });
+
+        function rowFn(rowData) {
+            var isClusterCell = function (d) { return nodes[d.x].group == nodes[d.y].group; };
+            d3.select(this).selectAll('.cell')
+                .data(rowData.filter(function (d) { return d.z; }))
+                .enter().append('rect')
+                .attr('class', function (d) { return nodes[d.x].group == nodes[d.y].group ? 'cell cluster_' + nodes[d.x].group : 'cell'; })
+                .attr('x', function (d) { return x(d.x); })
+                .attr('width', x.rangeBand()).attr('height', x.rangeBand())
+                .style('fill-opacity', function (d) { return isClusterCell(d) ? z(d.z) + 0.5 : 0.15; })
+                .style('fill', function (d) { return nodes[d.x].group == nodes[d.y].group ? getKeyColor(nodes[d.x].group) : null; })
+                .on('mouseover', mouseover).on('mouseout', mouseout);
+            cellwidth = (x.rangeBand() > maxcellwidth) ? maxcellwidth : x.rangeBand();
+        }
+
+        function mouseover(p) {
+            d3.selectAll('.row text').classed('active', function (d, i) { return i == p.y; });
+            d3.selectAll('.column text').classed('active', function (d, i) { return i == p.x; });
+            div.transition().duration(300).style('opacity', 1);
+
+            var ynode = p.y, xnode = p.x;
+            d3.selectAll('.cluster_' + nodes[ynode].group).style('fill-opacity', 1);
+            d3.selectAll('.cluster_' + nodes[xnode].group).style('fill-opacity', 1);
+
+            var clustersSeen = new Set();
+            var membersText = '';
+            nodes.forEach(function (tn) {
+                if (tn.group == nodes[ynode].group || tn.group == nodes[xnode].group) {
+                    clustersSeen.add(tn.group);
+                    membersText += escapeHtml(tn.name) + '<br/>';
+                }
+            });
+            var clusterMembersHtml = '';
+            if (clustersSeen.size === 1) {
+                var only = Array.from(clustersSeen)[0];
+                clusterMembersHtml = '<p align="left"><b>' + escapeHtml(clusterAnnotation(only).label) + '</b><br/>' + membersText + '</p>';
+            }
+            div.html(escapeHtml(nodes[p.y].name) + '  +  ' + escapeHtml(nodes[p.x].name) + clusterMembersHtml)
+                .style('left', (d3.event.pageX) + 'px').style('top', (d3.event.pageY) + 'px');
+        }
+
+        function mouseout(p) {
+            d3.selectAll('text').classed('active', false);
+            div.transition().duration(500).style('opacity', 0);
+            d3.selectAll('.cluster_' + nodes[p.y].group).style('fill-opacity', function (d) { return z(d.z) + 0.5; });
+            d3.selectAll('.cluster_' + nodes[p.x].group).style('fill-opacity', function (d) { return z(d.z) + 0.5; });
+        }
+
+        d3.select('#order').on('change', function () { clearTimeout(orderTimeout); order(this.value); });
+
+        function order(value) {
+            x.domain(orders[value]);
+            var t = svg.transition().duration(1500);
+            t.selectAll('.row')
+                .delay(function (d, i) { return x(i) * 4; })
+                .attr('transform', function (d, i) { return 'translate(0,' + x(i) + ')'; })
+                .selectAll('.cell')
+                .delay(function (d) { return x(d.x) * 4; })
+                .attr('x', function (d) { return x(d.x); });
+            t.selectAll('.column')
+                .delay(function (d, i) { return x(i) * 4; })
+                .attr('transform', function (d, i) { return 'translate(' + x(i) + ')rotate(-90)'; });
+        }
+
+        var orderTimeout = setTimeout(function () {
+            order('group');
+            d3.select('#order').property('selectedIndex', 2);
+        }, 300);
+    }
+
+    // ---------- table ----------
+    function statusEditor(cell, onRendered, success, cancel) {
+        var editor = document.createElement('input');
+        editor.setAttribute('type', 'text');
+        editor.setAttribute('list', 'status-options');
+        editor.style.width = '100%';
+        editor.style.boxSizing = 'border-box';
+        editor.value = cell.getValue() || '';
+        onRendered(function () { editor.focus(); });
+        function submit() { success(editor.value); }
+        editor.addEventListener('blur', submit);
+        editor.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { submit(); }
+            if (e.key === 'Escape') { cancel(); }
+        });
+        return editor;
+    }
+
+    function clusterFormatter(cell) {
+        var g = cell.getValue();
+        var span = document.createElement('span');
+        span.textContent = clusterAnnotation(g).label;
+        return span;
+    }
+
+    // shows a greyed-out placeholder in empty editable cells so it's obvious there's
+    // somewhere to type, even before you've hovered or clicked into the column.
+    function editableFormatter(placeholderText) {
+        return function (cell) {
+            var v = cell.getValue();
+            var span = document.createElement('span');
+            if (v) {
+                span.textContent = v;
+            } else {
+                span.textContent = placeholderText;
+                span.className = 'editable-placeholder';
+            }
+            return span;
+        };
+    }
+
+    function renderTable() {
+        var tableData = nodes.map(function (n) {
+            var mm = meta.matches[n.guid] || { myNotes: '', researchStatus: '', surname: '', lastEdited: null };
+            return Object.assign({}, n, {
+                myNotes: mm.myNotes || '',
+                researchStatus: mm.researchStatus || '',
+                surname: mm.surname || ''
+            });
+        });
+
+        table = new Tabulator('#users-table', {
+            width: '100%',
+            layout: 'fitDataFill',
+            responsiveLayout: 'collapse',
+            groupBy: 'group_',
+            groupHeader: function (value, count, data) {
+                var g = data && data.length ? data[0].group : null;
+                var label = g != null ? clusterAnnotation(g).label : value;
+                return escapeHtml(label) + "<span style='color:#333; margin-left:10px;'>(" + count + ' people)</span>';
+            },
+            columns: [
+                { title: 'Name', field: 'name', width: 220, responsive: 0, formatter: 'link', headerFilter: true, headerFilterPlaceholder: 'Search', formatterParams: { urlField: 'url', labelField: 'name', target: '_blank' } },
+                { title: 'cM', field: 'cM', align: 'center', width: 80, responsive: 2, headerFilter: 'number', headerFilterPlaceholder: 'Min cM', headerFilterFunc: '>=' },
+                { title: 'Largest cM', field: 'largestCm', align: 'center', width: 110, responsive: 3, headerFilter: 'number', headerFilterPlaceholder: 'Min', headerFilterFunc: '>=' },
+                { title: 'Segments', field: 'segments', align: 'center', width: 100, responsive: 4, headerFilter: 'number', headerFilterPlaceholder: 'Min', headerFilterFunc: '>=' },
+                { title: 'ICW', field: 'icw', align: 'center', width: 70, responsive: 4, headerFilter: 'number', headerFilterPlaceholder: 'Min', headerFilterFunc: '>=' },
+                { title: 'Cluster', field: 'group', align: 'center', width: 190, responsive: 2, headerFilter: true, headerFilterPlaceholder: 'Search cluster', formatter: clusterFormatter },
+                { title: 'Tree', field: 'url', align: 'center', width: 80, responsive: 3, formatter: 'link', formatterParams: { urlField: 'treeId', labelField: 'personCount', target: '_blank' } },
+                { title: "MyHeritage's Notes", field: 'note', width: 220, responsive: 3, headerFilter: true, headerFilterPlaceholder: 'Search' },
+                { title: 'My Notes ✎', field: 'myNotes', width: 220, responsive: 0, cssClass: 'editable-col', editor: 'input', formatter: editableFormatter('Click to add a note…'), headerFilter: true, headerFilterPlaceholder: 'Search my notes', cellEdited: onMatchFieldEdited },
+                { title: 'Status ✎', field: 'researchStatus', width: 140, responsive: 0, cssClass: 'editable-col', editor: statusEditor, formatter: editableFormatter('Set status…'), headerFilter: true, headerFilterPlaceholder: 'Search status', cellEdited: onMatchFieldEdited },
+                { title: 'Surname / Line ✎', field: 'surname', width: 150, responsive: 0, cssClass: 'editable-col', editor: 'input', formatter: editableFormatter('Add surname…'), headerFilter: true, headerFilterPlaceholder: 'Search surname', cellEdited: onMatchFieldEdited }
+            ]
+        });
+        table.setData(tableData);
+    }
+
+    // Note: this Tabulator build's table.on('cellEdited', ...) does not fire reliably right
+    // after construction (table.on isn't even defined synchronously yet), so per-match edits
+    // are wired via each editable column's own `cellEdited` callback instead — that fires
+    // reliably as soon as an edit commits.
+    function onMatchFieldEdited(cell) {
+        var field = cell.getField();
+        var guid = cell.getRow().getData().guid;
+        if (!guid) { return; }
+        if (!meta.matches[guid]) { meta.matches[guid] = { myNotes: '', researchStatus: '', surname: '', lastEdited: null }; }
+        meta.matches[guid][field] = cell.getValue();
+        meta.matches[guid].lastEdited = new Date().toISOString();
+        scheduleSave();
+    }
+
+    // ---------- export / import / open-original ----------
+    document.getElementById('export-btn').addEventListener('click', function () {
+        var blob = new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'clusters-metadata.json';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    });
+
+    document.getElementById('import-btn').addEventListener('click', function () {
+        document.getElementById('import-input').click();
+    });
+    document.getElementById('import-input').addEventListener('change', async function (e) {
+        if (!e.target.files.length) return;
+        try {
+            var imported = JSON.parse(await e.target.files[0].text());
+            var sourceInfo = { htmlName: originalHtmlName, matchCount: nodes.length, clusterCount: groupKeys.length };
+            var mergedResult = mergeMetadata(imported, sourceInfo, nodes, groupKeys);
+            meta = mergedResult.meta;
+            renderClustersPanel();
+            groupKeys.forEach(updateLegendText);
+            if (table) {
+                var tableData = nodes.map(function (n) {
+                    var mm = meta.matches[n.guid] || { myNotes: '', researchStatus: '', surname: '' };
+                    return Object.assign({}, n, { myNotes: mm.myNotes || '', researchStatus: mm.researchStatus || '', surname: mm.surname || '' });
+                });
+                table.setData(tableData);
+                table.redraw(true);
+            }
+            scheduleSave();
+        } catch (err) {
+            alert('Could not import that file: ' + err.message);
+        }
+        e.target.value = '';
+    });
+
+    document.getElementById('open-original-btn').addEventListener('click', function () {
+        if (!originalHtmlText) return;
+        var blob = new Blob([originalHtmlText], { type: 'text/html' });
+        var url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    });
+
+    // exposed for troubleshooting from the browser console — harmless to leave in place
+    window.__autoClustersDebug = function () { return { meta: meta, nodes: nodes, groupKeys: groupKeys }; };
+    window.__testLoadFromDirectory = loadFromDirectory;
+    window.__testGetError = function () { return setupError.textContent; };
+
+})();
+</script>
+</body>
+</html>
