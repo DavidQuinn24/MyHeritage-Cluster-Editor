@@ -1,3 +1,5 @@
+<img width="1557" height="966" alt="Image" src="https://github.com/user-attachments/assets/ddc4dfe2-be23-459c-8ce3-db879028626b" />
+
 # AutoClusters Editor
 
 Add persistent notes, cluster names, research status, and surname tags to a MyHeritage AutoClusters DNA-match export — without ever modifying MyHeritage's original files.
