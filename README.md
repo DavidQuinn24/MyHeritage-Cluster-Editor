@@ -1,3 +1,4 @@
+<a href="https://buymeacoffee.com/davequinnm" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 <img width="1557" height="966" alt="Image" src="https://github.com/user-attachments/assets/ddc4dfe2-be23-459c-8ce3-db879028626b" />
 
 # AutoClusters Editor
